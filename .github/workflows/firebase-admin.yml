@@ -1,0 +1,38 @@
+name: Firebase Admin Workflow
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  run-admin-sdk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Firebase Admin
+        run: npm install firebase-admin
+
+      - name: Write Firebase Admin JSON
+        env:
+          FIREBASE_ADMIN_JSON: ${{ secrets.FIREBASE_ADMIN_JSON }}
+        run: |
+          echo "$FIREBASE_ADMIN_JSON" > serviceAccountKey.json
+
+      - name: Run Admin SDK Script
+        run: |
+          echo "const admin = require('firebase-admin');
+          const serviceAccount = require('./serviceAccountKey.json');
+          admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount)
+          });
+          console.log('Firebase Admin SDK is ready!');" > testAdmin.js
+          node testAdmin.js
