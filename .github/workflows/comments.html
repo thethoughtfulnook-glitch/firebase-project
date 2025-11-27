@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Comments Keeper</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQe5qYatB7icH1yoYyZ9590ag80F5Flos",
+      authDomain: "comments-keeper.firebaseapp.com",
+      projectId: "comments-keeper",
+      storageBucket: "comments-keeper.firebasestorage.app",
+      messagingSenderId: "171557062392",
+      appId: "1:171557062392:web:cc718e4b5de112e4f2dd0d"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    async function postComment() {
+      const comment = document.getElementById('commentInput').value;
+      await addDoc(collection(db, 'Comments'), { text: comment, createdAt: new Date() });
+      loadComments();
+    }
+
+    async function loadComments() {
+      const querySnapshot = await getDocs(collection(db, 'Comments'));
+      const list = document.getElementById('commentsList');
+      list.innerHTML = '';
+      querySnapshot.forEach((doc) => {
+        const li = document.createElement('li');
+        li.textContent = doc.data().text;
+        list.appendChild(li);
+      });
+    }
+
+    window.onload = loadComments;
+  </script>
+</head>
+<body>
+  <h1>Comments Keeper</h1>
+  <input id="commentInput" type="text" placeholder="Write a comment..." />
+  <button onclick="postComment()">Post Comment</button>
+  <ul id="commentsList"></ul>
+</body>
+</html>
