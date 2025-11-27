@@ -1,90 +1,75 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
   <title>Comments Keeper</title>
-  <style>
-    body { font-family: Arial, sans-serif; padding: 20px; }
-    #commentsList { margin-top: 20px; }
-    .comment { border-bottom: 1px solid #ccc; padding: 5px 0; }
-  </style>
+  <script type="module">
+    // Firebase SDK imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyCQe5qYatB7icH1yoYyZ9590ag80F5Flos",
+      authDomain: "comments-keeper.firebaseapp.com",
+      projectId: "comments-keeper",
+      storageBucket: "comments-keeper.firebasestorage.app",
+      messagingSenderId: "171557062392",
+      appId: "1:171557062392:web:cc718e4b5de112e4f2dd0d"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Sign in anonymously on page load
+    signInAnonymously(auth)
+      .then(() => console.log("Signed in anonymously"))
+      .catch((error) => console.error("Auth error:", error));
+
+    // Post a comment
+    async function postComment() {
+      const comment = document.getElementById('commentInput').value.trim();
+      if (!comment) return alert("Please enter a comment");
+
+      try {
+        await addDoc(collection(db, 'Comments'), {
+          text: comment,
+          createdAt: new Date(),
+          uid: auth.currentUser.uid
+        });
+        document.getElementById('commentInput').value = '';
+        loadComments();
+      } catch (error) {
+        console.error("Error posting comment:", error);
+        alert("Failed to post comment");
+      }
+    }
+
+    // Load comments from Firestore
+    async function loadComments() {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'Comments'));
+        const list = document.getElementById('commentsList');
+        list.innerHTML = '';
+        querySnapshot.forEach((doc) => {
+          const li = document.createElement('li');
+          li.textContent = doc.data().text;
+          list.appendChild(li);
+        });
+      } catch (error) {
+        console.error("Error loading comments:", error);
+      }
+    }
+
+    window.onload = loadComments;
+  </script>
 </head>
 <body>
-
-<h1>Comments Keeper</h1>
-
-<form id="commentForm">
-  <input type="text" id="name" placeholder="Your name" required /><br><br>
-  <textarea id="message" placeholder="Your comment" required></textarea><br><br>
-  <button type="submit">Post Comment</button>
-</form>
-
-<div id="commentsList"></div>
-
-<!-- Firebase SDK -->
-<script type="module">
-  // 1️⃣ Import Firebase SDK modules
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.15.0/firebase-firestore.js";
-
-  // 2️⃣ Your Firebase config
-  const firebaseConfig = {
-    apiKey: "AIzaSyCQe5qYatB7icH1yoYyZ9590ag80F5Flos",
-    authDomain: "comments-keeper.firebaseapp.com",
-    projectId: "comments-keeper",
-    storageBucket: "comments-keeper.firebasestorage.app",
-    messagingSenderId: "171557062392",
-    appId: "1:171557062392:web:cc718e4b5de112e4f2dd0d"
-  };
-
-  // 3️⃣ Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
-  const commentsCollection = collection(db, "Comments");
-
-  // 4️⃣ Functions to post and load comments
-  async function postComment(name, message) {
-    try {
-      await addDoc(commentsCollection, {
-        name: name,
-        message: message,
-        timestamp: new Date()
-      });
-      console.log("Comment posted!");
-    } catch (e) {
-      console.error("Error posting comment:", e);
-    }
-  }
-
-  async function loadComments() {
-    const commentsDiv = document.getElementById("commentsList");
-    commentsDiv.innerHTML = "";
-    const q = query(commentsCollection, orderBy("timestamp", "desc"));
-    const querySnapshot = await getDocs(q);
-
-    querySnapshot.forEach((doc) => {
-      const data = doc.data();
-      const div = document.createElement("div");
-      div.className = "comment";
-      div.textContent = `${data.name}: ${data.message}`;
-      commentsDiv.appendChild(div);
-    });
-  }
-
-  // Form submission
-  document.getElementById("commentForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const name = document.getElementById("name").value;
-    const message = document.getElementById("message").value;
-    await postComment(name, message);
-    document.getElementById("name").value = "";
-    document.getElementById("message").value = "";
-    await loadComments();
-  });
-
-  // Load comments on page load
-  loadComments();
-</script>
-
+  <h1>Comments Keeper</h1>
+  <input id="commentInput" type="text" placeholder="Write a comment..." />
+  <button onclick="postComment()">Post Comment</button>
+  <ul id="commentsList"></ul>
 </body>
 </html>
